@@ -2,6 +2,10 @@ import { toAbsoluteUrl, pathExists } from "../../file/utils";
 import { prepareGeometry } from "../../geometry";
 import { Style } from "../../style/classes";
 import { Layer } from "../layer";
+import { type ZoomLevel } from "../zoom-levels";
+import { DEFAULT_ZOOM_LEVELS } from "../../defaults";
+
+
 
 export interface GeoJSONFeature {
     type: 'Feature';
@@ -37,21 +41,24 @@ export async function loadShapefile(name: string): Promise<GeoJSONFeatureCollect
 export class ShapefileLayer extends Layer {
     filePath: string;
 
-    constructor(name: string, filePath: string, style: Style = new Style({}), debug: boolean = false) {
-        super(name, style, debug);
+    constructor(
+        name: string, 
+        filePath: string, 
+        style: Style = new Style({}), 
+        zoomLevels: ZoomLevel[] = DEFAULT_ZOOM_LEVELS,
+        debug: boolean = false
+    ) {
+        super(name, style, zoomLevels, debug);
         this.filePath = filePath;
     }
 
     async load(): Promise<void> {
         const geojson = await loadShapefile(this.filePath);
-        if (this.debug) {
-            console.log(geojson.features);
-        }
         this.features = geojson.features.map((feature) => {
-            const prepared = prepareGeometry(feature.geometry);
-            return { ...feature, geometry: prepared };
-        }).filter((feature) => feature.geometry !== null) as any;
-        
+            const prepared = prepareGeometry(feature.geometry, this.zoomLevels);
+            return { ...feature, geometryByZoom: prepared };
+        }).filter((feature) => feature.geometryByZoom !== null) as any;
+
         if (this.debug) {
             console.log(this.features);
         }

@@ -1,6 +1,5 @@
 import type { Layer } from "./layers/layer";
-import { type Bounds, type Point } from "./math/types";
-import { scaleToWebMercatorZoom } from "./math/utils";
+import { type Bounds, type Point, scaleToWebMercatorZoom } from "./math";
 
 class Viewport {
     offset: Point;
@@ -65,7 +64,7 @@ export class GeoMap {
 
         this.ctx.fillStyle = '#000000'
         for (const layer of this.layers) {
-            layer.render(this.ctx, visibleBounds, scale);
+            layer.render(this.ctx, visibleBounds, scale, webMercScale);
         }
 
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);

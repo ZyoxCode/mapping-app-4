@@ -17,11 +17,10 @@ export const LAYERS = [
     ),
     new ShapefileLayer(
         "Land",
-        'ne_10m_land',
+        'ne_110m_land',
         new Style({
             fillColor: landColor,
             strokeWidth: 0,
         }),
-        true,
     ),
 ]

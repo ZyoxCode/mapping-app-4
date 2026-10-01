@@ -1,19 +1,17 @@
-import type { Bounds } from "../math/types";
+import type { ZoomLevel } from "../layers/zoom-levels";
+import type { Bounds } from "../math";
 
-export interface Feature {
-    geometry: PreparedGeometry;
-    properties: Record<string, any> | null;
-}
 
-export interface PreparedGeometry {
+export interface GeometryPerZoom<BuiltType = any> {
     type: string;
     bbox: Bounds;
-    path: Path2D;
+    builtPerZoom: Map<number, BuiltType>;
+    
 }
 
-export interface GeometryHandler<GeometryType, PreparedGeometryType extends PreparedGeometry> {
-    prepare(geometry: GeometryType): PreparedGeometryType | null;
-    appendToPath(path: Path2D, prepared: PreparedGeometryType, visibleBounds: Bounds): void;
+export interface GeometryHandler<GeometryType, BuiltType = any> {
+    prepare(geometry: GeometryType, zoomLevels: ZoomLevel[]): GeometryPerZoom<BuiltType> | null;
+    appendToPath(path: Path2D, prepared: GeometryPerZoom<BuiltType>, visibleBounds: Bounds, zoomIndex: number): void;
 }
 
 
