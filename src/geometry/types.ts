@@ -1,8 +1,7 @@
 import type { Bounds } from "../math/types";
 
 export interface Feature {
-    bbox: Bounds;
-    path: Path2D;
+    geometry: PreparedGeometry;
     properties: Record<string, any> | null;
 }
 

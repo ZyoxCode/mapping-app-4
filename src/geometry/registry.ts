@@ -14,6 +14,6 @@ export function prepareGeometry(geometry: {type: string, coordinates: any}): Pre
     return prepared != null ? prepared : null;
 }
 
-export function appendToPath(path: Path2D, type: string, processed: PreparedGeometry, visibleBounds: Bounds): void {
-    geometryHandlerRegistry.get(type)?.appendToPath(path, processed, visibleBounds);
+export function appendToPath(path: Path2D, prepared: PreparedGeometry, visibleBounds: Bounds): void {
+    geometryHandlerRegistry.get(prepared.type)?.appendToPath(path, prepared, visibleBounds);
 }

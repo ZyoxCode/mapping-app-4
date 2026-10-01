@@ -42,6 +42,17 @@ export function computeCoordsBounds(coords: number[][]): Bounds {
     return bounds;
 }
 
+export function unionBounds(boxes: Bounds[]): Bounds {
+    const result: Bounds = { maxCorner: { x: -Infinity, y: -Infinity }, minCorner: { x: Infinity, y: Infinity } };
+    for (const b of boxes) {
+        result.minCorner.x = Math.min(result.minCorner.x, b.minCorner.x);
+        result.minCorner.y = Math.min(result.minCorner.y, b.minCorner.y);
+        result.maxCorner.x = Math.max(result.maxCorner.x, b.maxCorner.x);
+        result.maxCorner.y = Math.max(result.maxCorner.y, b.maxCorner.y);
+    }
+    return result;
+}
+
 export function boundsIntersect({maxCorner: maxCorner1, minCorner: minCorner1}: Bounds, {maxCorner: maxCorner2, minCorner: minCorner2}: Bounds) {
     return maxCorner1.x >= minCorner2.x && maxCorner2.x >= minCorner1.x && maxCorner1.y >= minCorner2.y && maxCorner2.y >= minCorner1.y
 }

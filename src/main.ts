@@ -1,9 +1,9 @@
 import { resizeCanvas } from "./canvas";
-import { StaticLayer } from "./layers/layer";
+import { LAYERS } from "./config";
 import { GeoMap } from "./main-classes";
 
 const canvas = document.querySelector('canvas')!;
-console.log(canvas);
+let frameQueued = false;
 
 if (!canvas || canvas == null) {
     throw new Error("No canvas detected");
@@ -14,21 +14,14 @@ resizeCanvas(canvas);
 
 
 // Map Init
-const map = new GeoMap(canvas, [
+const map = new GeoMap(canvas, LAYERS);
 
-    new StaticLayer(
-        "test",
-        [[[[20, 20], [20, -20], [-20, -20], [-20, 20]]]],
-        'Polygon'
-    )
-]);
-
-map.render();
+render();
 
 // Event Listeners
 window.addEventListener('resize', () => {
     resizeCanvas(canvas);
-    map.render();
+    render();
 });
 
 canvas.addEventListener('wheel', (e) => {
@@ -49,7 +42,7 @@ canvas.addEventListener('wheel', (e) => {
     map.viewport.offset.y = dy - (dy - map.viewport.offset.y) * zoomFactor;
     map.viewport.scale *= zoomFactor;
 
-    map.render();
+    render();
 
 }, { passive: false });
   
@@ -66,7 +59,7 @@ canvas.addEventListener('pointermove', (e) => {
     map.viewport.offset.y += e.clientY - map.viewport.last.y;
     map.viewport.last = { x: e.clientX, y: e.clientY };
 
-    map.render();
+    render();
 }, { passive: true });
   
 function stopDrag(e: PointerEvent): void {
@@ -78,3 +71,13 @@ function stopDrag(e: PointerEvent): void {
   
 canvas.addEventListener('pointerup', stopDrag);
 canvas.addEventListener('pointercancel', stopDrag);
+
+function render() {
+    if (!frameQueued) {
+        frameQueued = true;
+        requestAnimationFrame(() => {
+            map.render();
+            frameQueued = false;
+        });
+    }
+}

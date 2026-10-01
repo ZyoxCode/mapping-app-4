@@ -1,71 +1,42 @@
 import type { Feature } from "../geometry/types";
-import { appendToPath, prepareGeometry} from "../geometry";
+import { appendToPath} from "../geometry";
+import { Style } from "../style/classes";
+import type { Bounds } from "../math/types";
 
 export class Layer {
     name: string;
     features: Feature[];
     ready: boolean;
+    style: Style;
+    debug: boolean;
 
-    constructor(name: string, features: Feature[]) {
+    constructor(name: string, style: Style = new Style({}), debug: boolean = false) {
         this.name = name;
-        this.features = features;
+        this.features = [];
+        this.style = style;
+        this.debug = debug;
         this.ready = false;
     }
 
     async load(): Promise<void> {}
 
-    render(ctx: CanvasRenderingContext2D) {
-        for (const feature of this.features) {
-            ctx.fill(feature.path);
-            ctx.stroke(feature.path);
-        }
-    }
-}
-
-
-export class StaticLayer extends Layer {
-    coordinates: number[][][][];
-    geometryType: string;
-    constructor(name: string, coordinates: number[][][][], geometryType: string) {
-        super(name, []);
-        this.coordinates = coordinates;
-        this.geometryType = geometryType;
-    }
-
-    async load(): Promise<void> {
-        
-        this.features = this.coordinates.flatMap((coords) => {
-            const prepared = prepareGeometry({ type: this.geometryType, coordinates: coords })
-            if (!prepared) return [];
-            return [{
-                bbox: prepared.bbox,
-                path: prepared.path,
-                properties: {},
-            }];
-        });
-
-        this.ready = true;
-    }
-
-    render(ctx: CanvasRenderingContext2D) {
+    render(ctx: CanvasRenderingContext2D, visibleBounds: Bounds, scale: number) {
         const path = new Path2D();
+        this.style.apply(ctx, scale);
+
         for (const feature of this.features) {
-            path.addPath(feature.path);
+            appendToPath(path, feature.geometry, visibleBounds);
         }
 
         if (!this.ready) return;
         
-        ctx.fill(path);
-        ctx.stroke(path);
-    }
-}
 
-export class DynamicLayer extends Layer {
-    constructor(name: string, features: Feature[]) {
-        super(name, features);
-    }
+        if (this.style.fill) {
+            ctx.fill(path);
+        }
 
-    async load(): Promise<void> {
-        // TODO: Load the layer from a file or some other source
+        if (this.style.stroke) {
+            ctx.stroke(path);
+        }
     }
 }
