@@ -1,6 +1,6 @@
 import type { ZoomLevel } from "../layers/zoom-levels";
 import type { Bounds } from "../math/types";
-import type { GeometryHandler, GeometryPerZoom} from "./types";
+import type { GeometryHandler, GeometryPerZoom } from "./types";
 
 const geometryHandlerRegistry = new Map<string, GeometryHandler<any, any>>();
 
@@ -10,7 +10,7 @@ export function registerGeometry<GeometryType, BuiltType = any>(
     geometryHandlerRegistry.set(type, handler);
 }
 
-export function prepareGeometry(geometry: {type: string, coordinates: any}, zoomLevels: ZoomLevel[]): GeometryPerZoom | null {
+export function prepareGeometry(geometry: { type: string, coordinates: any }, zoomLevels: ZoomLevel[]): GeometryPerZoom | null {
     const prepared = geometryHandlerRegistry.get(geometry.type)?.prepare(geometry as any, zoomLevels) ?? null;
     return prepared != null ? prepared : null;
 }

@@ -1,3 +1,5 @@
+import { renderLabelQueue } from "./labels/queue";
+import type { LabelQueueEntry } from "./labels/types";
 import type { Layer } from "./layers/layer";
 import { type Bounds, type Point, scaleToWebMercatorZoom } from "./math";
 
@@ -8,7 +10,7 @@ class Viewport {
     isDragging: boolean;
 
     constructor() {
-        this.offset = {x: 0, y: 0};
+        this.offset = { x: 0, y: 0 };
         this.last = { x: 0, y: 0 };
         this.scale = 1;
         this.isDragging = false;
@@ -21,13 +23,15 @@ export class GeoMap {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D | null;
     layers: Layer[];
+    labelQueue: LabelQueueEntry[];
 
     constructor(canvas: HTMLCanvasElement, layers: Layer[]) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.viewport = new Viewport();
+        this.labelQueue = [];
         this.layers = layers;
-        
+
         for (const layer of layers) {
             layer.load();
         }
@@ -36,21 +40,22 @@ export class GeoMap {
     getVisibleBounds(scale: number, translateX: number, translateY: number): Bounds {
         const xMin = (0 - (translateX)) / scale;
         const xMax = (this.canvas.width - (translateX)) / scale;
-        
+
         const yMax = -(0 - (translateY)) / scale;
         const yMin = -(this.canvas.height - (translateY)) / scale;
 
-        return {minCorner: {x: xMin, y: yMin}, maxCorner: {x: xMax, y: yMax}};
+        return { minCorner: { x: xMin, y: yMin }, maxCorner: { x: xMax, y: yMax } };
     }
-    
+
     render() {
+        this.labelQueue = [];
         if (!this.ctx) return;
 
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
         this.ctx.fillStyle = '#2d2e38';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        if (this.layers == null) {return;}
+
+        if (this.layers == null) { return; }
 
         const R = this.canvas.height / (2 * Math.PI);
         const scale = R * this.viewport.scale;
@@ -62,9 +67,11 @@ export class GeoMap {
         this.ctx.setTransform(scale, 0, 0, -scale, translateX, translateY);
 
         for (const layer of this.layers) {
-            layer.render(this.ctx, visibleBounds, scale, webMercScale);
+            layer.render(this.ctx, visibleBounds, scale, webMercScale, this.labelQueue);
         }
 
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        console.log(this.labelQueue);
+        renderLabelQueue(this.ctx, this.labelQueue, scale, translateX, translateY, this.canvas.width * 0.05);
     }
 }

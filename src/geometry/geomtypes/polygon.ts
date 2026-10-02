@@ -15,15 +15,14 @@ registerGeometry<PolygonGeometry, BuiltPolygon>('Polygon', {
 
         let active = geometry.coordinates.map(ring => {
             removeDuplicateEnds(ring);
-            return {simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring)};
+            return { simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring) };
         });
 
         for (const [index, zoomLevel] of zoomLevels.entries()) {
             const snapshot: BuiltRing[] = active.map(r => {
                 if (zoomLevel.areaThreshold != 0) r.simplifier.simplify(zoomLevel.areaThreshold);
-                return {coords: r.simplifier.snapshot(), bbox: r.bbox};
+                return { coords: r.simplifier.snapshot(), bbox: r.bbox };
             });
-            
             builtPerZoom.set(index, snapshot);
             active = active.filter((_, i) =>
                 snapshot[i].coords.length >= 3 &&
@@ -32,16 +31,16 @@ registerGeometry<PolygonGeometry, BuiltPolygon>('Polygon', {
         }
 
         const bbox = computeCoordsBounds(geometry.coordinates[0])
-        return {type: geometry.type, bbox: bbox, builtPerZoom: builtPerZoom};
+
+        return { type: geometry.type, bbox: bbox, builtPerZoom: builtPerZoom };
     },
     appendToPath(mergedPath, prepared, visibleBounds, zoomIndex) {
-        if (!boundsIntersect(prepared.bbox, visibleBounds)) {return;}
-        
+        if (!boundsIntersect(prepared.bbox, visibleBounds)) { return; }
+
         const built = prepared.builtPerZoom.get(zoomIndex);
         if (!built) return;
         for (const ring of built) {
             if (!boundsIntersect(ring.bbox, visibleBounds)) continue;
-
             mergedPath.addPath(ringToPath(ring.coords.map(coord => [coord.coord.x, coord.coord.y])));
         }
     }

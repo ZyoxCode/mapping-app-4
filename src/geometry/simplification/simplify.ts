@@ -1,11 +1,12 @@
 import { coordPairToPoint, triangleArea, type Point } from "../../math";
 import type { BuiltCoord, BuiltRing, Ring } from "../geomtypes/utils";
 
-export function buildRing(ring: Ring, closed=false): BuiltCoord[] {
-  
+export function buildRing(ring: Ring, closed = false): BuiltCoord[] {
+
     if ((closed && ring.length <= 3) || (!closed && ring.length <= 2)) {
-        return ring.map((coord) => ({ 
-            coord: coordPairToPoint(coord), importance: Infinity }
+        return ring.map((coord) => ({
+            coord: coordPairToPoint(coord), importance: Infinity
+        }
         ));
     }
     const newRing: BuiltCoord[] = [];
@@ -29,7 +30,7 @@ export function buildRing(ring: Ring, closed=false): BuiltCoord[] {
 
 export function removeAndRecalculate(ring: BuiltCoord[], index: number, closed = false): BuiltCoord[] {
     ring.splice(index, 1);
-    
+
     if (ring.length < 3) return ring;
 
     // Fix index wrap-around safety for neighboring nodes
@@ -115,9 +116,11 @@ export class RingSimplifier {
     private readonly heap = new MinHeap();
     private head = 0;
     private count: number;
+    private closed: boolean;
 
-    constructor(ring: BuiltCoord[]) {
+    constructor(ring: BuiltCoord[], closed: boolean = false) {
         const n = ring.length;
+        this.closed = closed
         this.count = n;
         this.points = new Array(n);
         this.importance = new Float64Array(n);
@@ -126,17 +129,19 @@ export class RingSimplifier {
         this.alive = new Uint8Array(n).fill(1);
         for (let i = 0; i < n; i++) {
             this.points[i] = ring[i].coord;
-            this.importance[i] = ring[i].importance;
+            const isEndpoint = !closed && (i === 0 || i === n - 1);
+            const imp = isEndpoint ? Infinity : ring[i].importance;
+            this.importance[i] = imp;
             this.prev[i] = (i - 1 + n) % n;
             this.next[i] = (i + 1) % n;
-            if (Number.isFinite(ring[i].importance)) this.heap.push(ring[i].importance, i);
+            if (Number.isFinite(imp)) this.heap.push(imp, i);
         }
     }
 
     /** Removes vertices with importance below the threshold, never going under 3 vertices. */
     simplify(threshold: number): void {
         const heap = this.heap;
-        while (this.count > 3 && heap.size > 0 && heap.peekKey() < threshold) {
+        while ((this.closed ? this.count > 3 : this.count > 2) && heap.size > 0 && heap.peekKey() < threshold) {
             const key = heap.peekKey();
             const idx = heap.pop();
             if (!this.alive[idx] || key !== this.importance[idx]) continue; // stale entry
@@ -157,18 +162,32 @@ export class RingSimplifier {
 
     private remove(idx: number): void {
         const p = this.prev[idx], n = this.next[idx];
-        this.next[p] = n;
-        this.prev[n] = p;
+
+        // Safely update linked list without referencing -1 indices
+        if (p !== -1) this.next[p] = n;
+        if (n !== -1) this.prev[n] = p;
+
         this.alive[idx] = 0;
         this.count--;
         if (this.head === idx) this.head = n;
-        this.refresh(p);
-        this.refresh(n);
+
+        if (p !== -1) this.refresh(p);
+        if (n !== -1) this.refresh(n);
     }
 
     private refresh(i: number): void {
-        const imp = triangleArea(this.points[this.prev[i]], this.points[i], this.points[this.next[i]]);
+        // 3. Do not re-evaluate endpoints or points that lost neighbors in open lines
+        if (!Number.isFinite(this.importance[i])) return;
+
+        const p = this.prev[i];
+        const n = this.next[i];
+
+        // If either adjacent neighbor is missing (end of open line), cannot compute triangle area
+        if (p === -1 || n === -1) return;
+
+        const imp = triangleArea(this.points[p], this.points[i], this.points[n]);
         this.importance[i] = imp;
         this.heap.push(imp, i);
     }
+
 }

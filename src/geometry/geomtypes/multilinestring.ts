@@ -1,63 +1,59 @@
 import { boundsIntersect, computeCoordsBounds, unionBounds } from "../../math";
 import { registerGeometry } from "../registry";
-import { builtRingArea, ringToPath, type BuiltMultiPolygon, type BuiltRing, type MultiPolygon } from "./utils";
-import type {Bounds} from "../../math";
+import { builtLineLength, mergeLineStrings, ringToPath, type BuiltLineString, type BuiltMultiLineString, type MultiLineString } from "./utils";
 import { buildRing, RingSimplifier } from "../simplification/simplify";
 
-export interface MultiPolygonGeometry {
-    type: 'MultiPolygon';
-    coordinates: MultiPolygon;
+export interface MultiLineStringGeometry {
+    type: 'MultiLineString';
+    coordinates: MultiLineString;
 }
 
-registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiLineString', {
+registerGeometry<MultiLineStringGeometry, BuiltMultiLineString>('MultiLineString', {
     prepare(geometry, zoomLevels) {
-        const builtPerZoom = new Map<number, BuiltMultiPolygon>();
-        let active = geometry.coordinates.map(poly => {
-            return poly.map((ring) => {
-                return {simplifier: new RingSimplifier(buildRing(ring)), bbox: computeCoordsBounds(ring)};
-            })
-        })
+        const builtPerZoom = new Map<number, BuiltMultiLineString>();
+        const mergedLines = mergeLineStrings(geometry.coordinates);
+
+        let active = mergedLines.map(line => ({
+            simplifier: new RingSimplifier(buildRing(line, false), false),
+            bbox: computeCoordsBounds(line)
+        }));
+
+        const overallBbox = unionBounds(active.map(item => item.bbox));
 
         for (const [index, zoomLevel] of zoomLevels.entries()) {
-            const snapshots: BuiltRing[][] = active.map(poly =>
-                poly.map(r => {
-                    if (zoomLevel.areaThreshold !== 0) r.simplifier.simplify(zoomLevel.areaThreshold);
-                    return {coords: r.simplifier.snapshot(), bbox: r.bbox};
-                })
-            );
+            const lines: BuiltLineString[] = [];
 
-            builtPerZoom.set(index, {
-                polygons: snapshots.map(poly =>
-                    poly.filter(ring => ring.coords.length >= 3 && ring.coords.length >= zoomLevel.areaThreshold)
-                ).filter(poly => builtRingArea(poly[0].coords) >= zoomLevel.areaThreshold),
-                bbox: unionBounds(active.map(polygon => polygon[0]?.bbox).filter(Boolean))
-            } as BuiltMultiPolygon);
+            for (const item of active) {
+                if (zoomLevel.areaThreshold !== 0) {
+                    item.simplifier.simplify(zoomLevel.areaThreshold);
+                }
+                const coords = item.simplifier.snapshot();
+                if (coords.length >= 2 && builtLineLength(coords) >= zoomLevel.areaThreshold) {
+                    lines.push({ coords, bbox: item.bbox });
+                }
+            }
 
-            active = active.filter((poly, p) =>
-                poly.length > 0 &&
-                snapshots[p].every(r =>
-                    r.coords.length >= 3 &&
-                    builtRingArea(r.coords) >= zoomLevel.areaThreshold
-                )
-            );
+            if (lines.length === 0) {
+                break;
+            }
+
+            const zoomBbox = unionBounds(lines.map(line => line.bbox));
+            builtPerZoom.set(index, { lines, bbox: zoomBbox });
         }
-        let bbox = {maxCorner: {x: 0, y: 0}, minCorner: {x: 0, y: 0}} as Bounds;
-        const index = zoomLevels.keys().next().value
-        if (index != null) {
-            bbox = builtPerZoom.get(index)?.bbox as Bounds;
-        }
-        return {type: geometry.type, bbox: bbox, builtPerZoom: builtPerZoom};
+
+        return { type: geometry.type, bbox: overallBbox, builtPerZoom };
     },
+
     appendToPath(mergedPath, prepared, visibleBounds, zoomIndex) {
-        if (!boundsIntersect(prepared.bbox, visibleBounds)) {return;}
+        if (!boundsIntersect(prepared.bbox, visibleBounds)) { return; }
+
         const built = prepared.builtPerZoom.get(zoomIndex);
-        if (!built) return;
-        for (const poly of built.polygons) {
-            if (!boundsIntersect(poly[0].bbox, visibleBounds)) continue;
-            for (const ring of poly) {
-                if (!boundsIntersect(ring.bbox, visibleBounds)) continue;
-                mergedPath.addPath(ringToPath(ring.coords.map(coord => [coord.coord.x, coord.coord.y])));
+        if (!built || !boundsIntersect(built.bbox, visibleBounds)) { return; }
+
+        for (const line of built.lines) {
+            if (boundsIntersect(line.bbox, visibleBounds)) {
+                mergedPath.addPath(ringToPath(line.coords.map(coord => [coord.coord.x, coord.coord.y]), false));
             }
         }
-    }
+    },
 })

@@ -1,10 +1,11 @@
 import { toAbsoluteUrl, pathExists } from "../../file/utils";
 import { prepareGeometry } from "../../geometry";
-import { Style } from "../../style/classes";
 import { Layer } from "../layer";
 import { type ZoomLevel } from "../zoom-levels";
 import { DEFAULT_ZOOM_LEVELS } from "../../defaults";
-import type { StyleRule } from "../../style";
+import type { StyleRule } from "../../styles";
+import type { LabelRule } from "../../labels/types";
+import { lonLatToMercator } from "../../math";
 
 
 
@@ -13,7 +14,7 @@ export interface GeoJSONFeature {
     properties: Record<string, any>;
     geometry: { type: string; coordinates: any };
 }
-  
+
 export interface GeoJSONFeatureCollection {
     type: 'FeatureCollection';
     features: GeoJSONFeature[];
@@ -31,7 +32,7 @@ export async function loadShapefile(name: string): Promise<GeoJSONFeatureCollect
     const data = (await pathExists(unzippedShp))
         ? await shp(toAbsoluteUrl(`./data/${name}/${name}`))
         : await shp(`./data/${name}.zip`);
-    
+
     const geojson = Array.isArray(data) ? data[0] : data;
     shapefileCache.set(name, geojson);
     return geojson;
@@ -43,13 +44,14 @@ export class ShapefileLayer extends Layer {
     filePath: string;
 
     constructor(
-        name: string, 
-        filePath: string, 
-        styleRules: StyleRule[], 
+        name: string,
+        filePath: string,
+        styleRules: StyleRule[],
+        labelRules: LabelRule[] = [],
         zoomLevels: ZoomLevel[] = DEFAULT_ZOOM_LEVELS,
         debug: boolean = false
     ) {
-        super(name, styleRules, zoomLevels, debug);
+        super(name, styleRules, labelRules, zoomLevels, debug);
         this.filePath = filePath;
     }
 
@@ -57,12 +59,20 @@ export class ShapefileLayer extends Layer {
         const geojson = await loadShapefile(this.filePath);
         this.features = geojson.features.map((feature) => {
             const prepared = prepareGeometry(feature.geometry, this.zoomLevels);
-            return { ...feature, geometryByZoom: prepared };
+            let labelCoords = null;
+            if (this.labelRules.length > 0) {
+                if (feature.properties.LABEL_X != null) {
+                    labelCoords = lonLatToMercator({ x: feature.properties.LABEL_X, y: feature.properties.LABEL_Y });
+                }
+            }
+            return { ...feature, geometryByZoom: prepared, rawGeometry: feature.geometry, labelCoords: labelCoords };
         }).filter((feature) => feature.geometryByZoom !== null) as any;
 
         if (this.debug) {
             console.log(this.features);
         }
+
         this.ready = true;
     }
 }
+

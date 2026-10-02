@@ -1,7 +1,7 @@
 import { boundsIntersect, computeCoordsBounds, unionBounds } from "../../math";
 import { registerGeometry } from "../registry";
 import { builtRingArea, removeDuplicateEnds, ringToPath, type BuiltMultiPolygon, type BuiltRing, type MultiPolygon } from "./utils";
-import type {Bounds} from "../../math";
+import type { Bounds } from "../../math";
 import { buildRing, RingSimplifier } from "../simplification/simplify";
 
 export interface MultiPolygonGeometry {
@@ -15,7 +15,7 @@ registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
         let active = geometry.coordinates.map(poly => {
             return poly.map((ring) => {
                 removeDuplicateEnds(ring);
-                return {simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring)};
+                return { simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring) };
             })
         })
 
@@ -23,14 +23,19 @@ registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
             const snapshots: BuiltRing[][] = active.map(poly =>
                 poly.map(r => {
                     if (zoomLevel.areaThreshold !== 0) r.simplifier.simplify(zoomLevel.areaThreshold);
-                    return {coords: r.simplifier.snapshot(), bbox: r.bbox};
+                    return { coords: r.simplifier.snapshot(), bbox: r.bbox };
                 })
             );
 
+
             builtPerZoom.set(index, {
-                polygons: snapshots.map(poly =>
-                    poly.filter(ring => ring.coords.length >= 3 && ring.coords.length >= zoomLevel.areaThreshold)
-                ).filter(poly => builtRingArea(poly[0].coords) >= zoomLevel.areaThreshold),
+                polygons: snapshots.map(poly => {
+                    return poly.filter(ring => ring.coords.length >= 3)
+                }).filter(
+                    poly => poly.length > 0
+                ).filter(
+                    poly => builtRingArea(poly[0].coords) >= zoomLevel.areaThreshold
+                ),
                 bbox: unionBounds(active.map(polygon => polygon[0]?.bbox).filter(Boolean))
             } as BuiltMultiPolygon);
 
@@ -42,15 +47,15 @@ registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
                 )
             );
         }
-        let bbox = {maxCorner: {x: 0, y: 0}, minCorner: {x: 0, y: 0}} as Bounds;
+        let bbox = { maxCorner: { x: 0, y: 0 }, minCorner: { x: 0, y: 0 } } as Bounds;
         const index = zoomLevels.keys().next().value
         if (index != null) {
             bbox = builtPerZoom.get(index)?.bbox as Bounds;
         }
-        return {type: geometry.type, bbox: bbox, builtPerZoom: builtPerZoom};
+        return { type: geometry.type, bbox: bbox, builtPerZoom: builtPerZoom };
     },
     appendToPath(mergedPath, prepared, visibleBounds, zoomIndex) {
-        if (!boundsIntersect(prepared.bbox, visibleBounds)) {return;}
+        if (!boundsIntersect(prepared.bbox, visibleBounds)) { return; }
         const built = prepared.builtPerZoom.get(zoomIndex);
         if (!built) return;
         for (const poly of built.polygons) {

@@ -1,5 +1,5 @@
 import type { ZoomLevel } from "./layers/zoom-levels";
-import type { StyleOptions } from "./style/types";
+import type { StyleOptions } from "./styles/types";
 
 export const DEFAULT_STYLE_OPTIONS: StyleOptions = {
     fillColor: '#ffffff',
