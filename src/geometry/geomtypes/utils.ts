@@ -46,3 +46,23 @@ export function ringToPath(ring: Ring, close=false) {
     return path;
 }
 
+export function ringArea(ring: number[][]): number {
+    let area = 0;
+    for (let i = 0; i < ring.length; i++) {
+        const [x0, y0] = ring[i];
+        const [x1, y1] = ring[(i + 1) % ring.length];
+        area += x0 * y1 - x1 * y0;
+    }
+    return Math.abs(area / 2);
+}
+
+export function builtRingArea(coords: BuiltCoord[]): number {
+    let area = 0;
+    const n = coords.length;
+    for (let i = 0; i < n; i++) {
+        const a = coords[i].coord;
+        const b = coords[(i + 1) % n].coord;
+        area += a.x * b.y - b.x * a.y;
+    }
+    return Math.abs(area / 2);
+}

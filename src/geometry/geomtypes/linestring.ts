@@ -9,13 +9,14 @@ export interface PolygonGeometry {
 }
 
 
-registerGeometry<PolygonGeometry, BuiltPolygon>('Polygon', {
+registerGeometry<PolygonGeometry, BuiltPolygon>('LineString', {
     prepare(geometry, zoomLevels) {
         const builtPerZoom = new Map<number, BuiltPolygon>();
 
         let active = geometry.coordinates.map(ring => {
+            console.log(ring);
             removeDuplicateEnds(ring);
-            return {simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring)};
+            return {simplifier: new RingSimplifier(buildRing(ring, false)), bbox: computeCoordsBounds(ring)};
         });
 
         for (const [index, zoomLevel] of zoomLevels.entries()) {

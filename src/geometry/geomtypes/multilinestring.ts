@@ -1,6 +1,6 @@
 import { boundsIntersect, computeCoordsBounds, unionBounds } from "../../math";
 import { registerGeometry } from "../registry";
-import { builtRingArea, removeDuplicateEnds, ringToPath, type BuiltMultiPolygon, type BuiltRing, type MultiPolygon } from "./utils";
+import { builtRingArea, ringToPath, type BuiltMultiPolygon, type BuiltRing, type MultiPolygon } from "./utils";
 import type {Bounds} from "../../math";
 import { buildRing, RingSimplifier } from "../simplification/simplify";
 
@@ -9,13 +9,12 @@ export interface MultiPolygonGeometry {
     coordinates: MultiPolygon;
 }
 
-registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
+registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiLineString', {
     prepare(geometry, zoomLevels) {
         const builtPerZoom = new Map<number, BuiltMultiPolygon>();
         let active = geometry.coordinates.map(poly => {
             return poly.map((ring) => {
-                removeDuplicateEnds(ring);
-                return {simplifier: new RingSimplifier(buildRing(ring, true)), bbox: computeCoordsBounds(ring)};
+                return {simplifier: new RingSimplifier(buildRing(ring)), bbox: computeCoordsBounds(ring)};
             })
         })
 

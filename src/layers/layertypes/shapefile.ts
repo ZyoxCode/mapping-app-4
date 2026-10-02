@@ -4,6 +4,7 @@ import { Style } from "../../style/classes";
 import { Layer } from "../layer";
 import { type ZoomLevel } from "../zoom-levels";
 import { DEFAULT_ZOOM_LEVELS } from "../../defaults";
+import type { StyleRule } from "../../style";
 
 
 
@@ -44,11 +45,11 @@ export class ShapefileLayer extends Layer {
     constructor(
         name: string, 
         filePath: string, 
-        style: Style = new Style({}), 
+        styleRules: StyleRule[], 
         zoomLevels: ZoomLevel[] = DEFAULT_ZOOM_LEVELS,
         debug: boolean = false
     ) {
-        super(name, style, zoomLevels, debug);
+        super(name, styleRules, zoomLevels, debug);
         this.filePath = filePath;
     }
 

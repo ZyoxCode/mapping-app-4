@@ -61,8 +61,6 @@ export class GeoMap {
 
         this.ctx.setTransform(scale, 0, 0, -scale, translateX, translateY);
 
-
-        this.ctx.fillStyle = '#000000'
         for (const layer of this.layers) {
             layer.render(this.ctx, visibleBounds, scale, webMercScale);
         }
