@@ -29,7 +29,7 @@ registerGeometry<MultiLineStringGeometry, BuiltMultiLineString>('MultiLineString
                 }
                 const coords = item.simplifier.snapshot();
                 if (coords.length >= 2 && builtLineLength(coords) >= zoomLevel.areaThreshold) {
-                    lines.push({ coords, bbox: item.bbox });
+                    lines.push({ coords, bbox: item.bbox, path: ringToPath(coords.map(coord => [coord.coord.x, coord.coord.y]), false) });
                 }
             }
 
@@ -52,7 +52,7 @@ registerGeometry<MultiLineStringGeometry, BuiltMultiLineString>('MultiLineString
 
         for (const line of built.lines) {
             if (boundsIntersect(line.bbox, visibleBounds)) {
-                mergedPath.addPath(ringToPath(line.coords.map(coord => [coord.coord.x, coord.coord.y]), false));
+                mergedPath.addPath(line.path);
             }
         }
     },

@@ -48,8 +48,10 @@ export class Layer {
                 path = new Path2D();
                 buckets.set(style, path);
             }
+            if (style.enabled.fill || style.enabled.stroke) {
+                appendToPath(path, geometry, visibleBounds, zoomIndex);
+            }
 
-            appendToPath(path, geometry, visibleBounds, zoomIndex);
 
             if (!feature.labelCoords) continue;
             if (!boundsContainsPoint(visibleBounds, feature.labelCoords)) continue;
@@ -73,8 +75,8 @@ export class Layer {
 
         for (const [style, path] of buckets) {
             style.apply(ctx, scale);
-            if (style.fill) ctx.fill(path, 'evenodd');
-            if (style.stroke) ctx.stroke(path);
+            if (style.enabled.fill) ctx.fill(path, 'evenodd');
+            if (style.enabled.stroke) ctx.stroke(path);
         }
     }
 }

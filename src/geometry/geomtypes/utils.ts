@@ -14,11 +14,13 @@ export interface BuiltCoord {
 
 export interface BuiltRing {
     coords: BuiltCoord[];
+    path: Path2D;
     bbox: Bounds;
 }
 
 export type BuiltLineString = {
     coords: BuiltCoord[];
+    path: Path2D;
     bbox: Bounds;
 }
 
@@ -32,6 +34,11 @@ export type BuiltPolygon = BuiltRing[]; // because we get the bbox of the first 
 export interface BuiltMultiPolygon {
     polygons: BuiltPolygon[];
     bbox: Bounds;
+}
+
+export interface BuiltPoint {
+    coord: Point;
+    path: Path2D;
 }
 
 export function removeDuplicateEnds(ring: Coord[], epsilon = 1e-5): Coord[] {
@@ -140,4 +147,85 @@ export function mergeLineStrings(lines: Coord[][]): Coord[][] {
     }
 
     return merged;
+}
+
+export function getPolygonCentroid(outerRing: number[][]): Point {
+    if (!outerRing || !outerRing.length) {
+        return { x: 0, y: 0 };
+    }
+    const n = outerRing.length;
+
+    let area = 0;
+    let cx = 0;
+    let cy = 0;
+
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    for (let i = 0; i < n; i++) {
+        const [x0, y0] = outerRing[i];
+        const [x1, y1] = outerRing[(i + 1) % n];
+
+        if (x0 < minX) minX = x0;
+        if (x0 > maxX) maxX = x0;
+        if (y0 < minY) minY = y0;
+        if (y0 > maxY) maxY = y0;
+
+        const cross = (x0 * y1 - x1 * y0);
+        area += cross;
+        cx += (x0 + x1) * cross;
+        cy += (y0 + y1) * cross;
+    }
+
+    area = area / 2;
+
+    if (Math.abs(area) < 1e-12 || isNaN(cx) || isNaN(cy)) {
+        return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+    }
+
+    cx = cx / (6 * area);
+    cy = cy / (6 * area);
+
+    if (isNaN(cx) || isNaN(cy)) {
+        return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+    }
+
+    return { x: cx, y: cy };
+}
+
+export function getMultiPolygonCentroid(polygons: number[][][]): Point {
+
+    if (!polygons || !polygons.length) {
+        return { x: 0, y: 0 };
+    }
+
+    let largestPolygonRings = null;
+    let maxArea = -1;
+
+    for (const outerRing of polygons) {
+        if (!outerRing || !outerRing.length) continue;
+
+        let ringArea = 0;
+
+        for (let i = 0; i < outerRing.length; i++) {
+            const [x0, y0] = outerRing[i];
+            const [x1, y1] = outerRing[(i + 1) % outerRing.length];
+            ringArea += (x0 * y1 - x1 * y0);
+        }
+
+        ringArea = Math.abs(ringArea / 2);
+
+        if (ringArea > maxArea) {
+            maxArea = ringArea;
+            largestPolygonRings = outerRing;
+        }
+    }
+
+    // Process centroid of largest ring group
+    if (largestPolygonRings) {
+        return getPolygonCentroid(largestPolygonRings);
+    }
+
+    // Fallback if no valid ring was parsed
+    return { x: 0, y: 0 };
 }

@@ -1,11 +1,7 @@
 import type { LabelRule } from "./types";
 
-export function wrapText(
-    text: string,
-    ctx: CanvasRenderingContext2D,
-    maxWidth: number,
-): string[] {
-    if (maxWidth <= 0) return [text];
+export function wrapText(text: string, maxChars: number): string[] {
+    if (maxChars <= 0) return [text];
 
     const words = text.split(/\s+/).filter(Boolean);
     const lines: string[] = [];
@@ -13,7 +9,7 @@ export function wrapText(
 
     for (const word of words) {
         const testLine = current ? `${current} ${word}` : word;
-        if (ctx.measureText(testLine).width > maxWidth && current) {
+        if (testLine.length > maxChars && current) {
             lines.push(current);
             current = word;
         } else {

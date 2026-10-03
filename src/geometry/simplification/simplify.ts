@@ -1,5 +1,5 @@
 import { coordPairToPoint, triangleArea, type Point } from "../../math";
-import type { BuiltCoord, BuiltRing, Ring } from "../geomtypes/utils";
+import type { BuiltCoord, Ring } from "../geomtypes/utils";
 
 export function buildRing(ring: Ring, closed = false): BuiltCoord[] {
 
@@ -27,32 +27,6 @@ export function buildRing(ring: Ring, closed = false): BuiltCoord[] {
 
     return newRing;
 }
-
-export function removeAndRecalculate(ring: BuiltCoord[], index: number, closed = false): BuiltCoord[] {
-    ring.splice(index, 1);
-
-    if (ring.length < 3) return ring;
-
-    // Fix index wrap-around safety for neighboring nodes
-    const len = ring.length;
-    const prevIdx = (index - 1 + len) % len;
-    const currIdx = index % len;
-
-    // Recalculate node left of deletion point
-    const pPrev = ring[(prevIdx - 1 + len) % len].coord;
-    const pCurr = ring[prevIdx].coord;
-    const pNext = ring[(prevIdx + 1) % len].coord;
-    ring[prevIdx].importance = triangleArea(pPrev, pCurr, pNext);
-
-    // Recalculate node right of deletion point (now shifted into currIdx)
-    const nPrev = ring[(currIdx - 1 + len) % len].coord;
-    const nCurr = ring[currIdx].coord;
-    const nNext = ring[(currIdx + 1) % len].coord;
-    ring[currIdx].importance = triangleArea(nPrev, nCurr, nNext);
-
-    return ring;
-}
-
 class MinHeap {
     private keys: number[] = [];
     private vals: number[] = [];

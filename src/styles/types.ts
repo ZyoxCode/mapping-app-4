@@ -1,12 +1,23 @@
 import type { Style } from "./classes";
 
 export interface StyleOptions {
-    fillColor?: string;
-    strokeColor?: string;
-    strokeWidth?: number;
-    textAlign?: CanvasTextAlign;
-    font?: string;
-    dashed?: number[];
+    fillColor?: string | null;
+    strokeColor?: string | null;
+    strokeWidth?: number | null;
+    textAlign?: CanvasTextAlign | null;
+    font?: string | null;
+    dashed?: number[] | null;
+    pointRadii?: number[];
+}
+
+export interface StyleOptionsCertain {
+    fillColor: string | null;
+    strokeColor: string | null;
+    strokeWidth: number | null;
+    textAlign: CanvasTextAlign | null;
+    font: string | null;
+    dashed: number[] | null;
+    pointRadii: number[];
 }
 
 export interface StyleRule<P = Record<string, any>> {

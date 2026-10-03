@@ -21,7 +21,8 @@ registerGeometry<PolygonGeometry, BuiltPolygon>('Polygon', {
         for (const [index, zoomLevel] of zoomLevels.entries()) {
             const snapshot: BuiltRing[] = active.map(r => {
                 if (zoomLevel.areaThreshold != 0) r.simplifier.simplify(zoomLevel.areaThreshold);
-                return { coords: r.simplifier.snapshot(), bbox: r.bbox };
+                const snapshot = r.simplifier.snapshot();
+                return { coords: snapshot, bbox: r.bbox, path: ringToPath(snapshot.map(coord => [coord.coord.x, coord.coord.y])) };
             });
             builtPerZoom.set(index, snapshot);
             active = active.filter((_, i) =>
@@ -41,7 +42,7 @@ registerGeometry<PolygonGeometry, BuiltPolygon>('Polygon', {
         if (!built) return;
         for (const ring of built) {
             if (!boundsIntersect(ring.bbox, visibleBounds)) continue;
-            mergedPath.addPath(ringToPath(ring.coords.map(coord => [coord.coord.x, coord.coord.y])));
+            mergedPath.addPath(ring.path);
         }
     }
 })

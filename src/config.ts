@@ -1,18 +1,17 @@
 import { ShapefileLayer } from "./layers/layertypes/shapefile";
 import { StaticLayer } from "./layers/layertypes/static";
-import { always, resolveStyle } from "./styles";
+import { always } from "./styles";
 import { Style } from "./styles/classes";
-import type { ZoomLevel } from "./layers/zoom-levels";
-import { DEFAULT_ZOOM_LEVELS } from "./defaults";
 import { capitalize } from "./labels/utils";
 
 const waterColor = '#4f86aa';
 const landColor = '#92c592';
 const iceColor = '#f1f1f1';
 
-const disputedStyle = new Style({ strokeColor: '#000000', strokeWidth: 0.5, dashed: [5, 5] }, false, true);
-const textStyle = new Style({ fillColor: '#111111', strokeWidth: 1.3, strokeColor: '#ffffff', font: '700 10px "Inter", sans-serif' });
-const textStyle2 = new Style({ fillColor: '#4d4d4d', strokeWidth: 1.2, strokeColor: '#ffffff', font: '700 italic 10px "Inter", sans-serif' });
+const disputedStyle = new Style({ strokeColor: '#000000', strokeWidth: 0.5, dashed: [5, 5] });
+const textStyle = new Style({ fillColor: '#111111', strokeWidth: 1.3, strokeColor: '#ffffff', font: '700 11px "Inter", sans-serif' });
+const textStyle2 = new Style({ fillColor: '#4d4d4d', strokeWidth: 1.2, strokeColor: '#ffffff', font: '700 italic 11px "Inter", sans-serif' });
+const textStyle3 = new Style({ fillColor: '#111111', strokeWidth: 1.2, textAlign: "left", strokeColor: '#ffffff', font: '700 9px "Inter", sans-serif', pointRadii: [3, 1.5] });
 
 const alwaysMaxDetail = [{ upperZoomBound: Infinity, areaThreshold: 0 }];
 
@@ -60,7 +59,7 @@ export const LAYERS = [
             { when: (props) => props.FEATURECLA === 'Lease limit', style: disputedStyle },
             { when: (props) => props.FEATURECLA === 'Unrecognized', style: disputedStyle },
             { when: (props) => props.FCLASS_ISO === 'Unrecognized', style: disputedStyle },
-            { when: () => true, style: new Style({ strokeColor: '#000000', strokeWidth: 0.5 }, false, true) },
+            { when: () => true, style: new Style({ strokeColor: '#000000', strokeWidth: 0.5 }) },
         ],
     ),
     new ShapefileLayer(
@@ -71,7 +70,7 @@ export const LAYERS = [
     new ShapefileLayer(
         'Countries',
         'ne_50m_admin_0_countries',
-        always(new Style({}, false, false)),
+        always(new Style({})),
         [
             {
                 when: (props, zoom) => {
@@ -94,6 +93,43 @@ export const LAYERS = [
                 },
                 style: textStyle
             },
+        ],
+        alwaysMaxDetail,
+    ),
+    new ShapefileLayer(
+        'Geography Regions',
+        'ne_10m_geography_regions_polys',
+        always(new Style({})),
+        [
+            {
+                when: (props, zoom) => {
+                    if (props.FEATURECLA != "Continent") {
+                        return props.MIN_LABEL + 3 <= zoom && zoom <= props.MAX_LABEL + 3;
+                    } else {
+                        return props.MIN_LABEL <= zoom && zoom <= props.MAX_LABEL;
+                    }
+                },
+                text: (props) => props.FEATURECLA === "Continent" ? capitalize(props.NAME_EN) : props.NAME_EN,
+                style: textStyle2,
+                priorityOffset: 2,
+            }
+        ],
+
+        alwaysMaxDetail,
+    ),
+    new ShapefileLayer(
+        'Populated Places',
+        'ne_110m_populated_places_simple',
+        always(new Style({})),
+        [
+            {
+                when: (props, zoom) => {
+                    return props.min_zoom <= zoom;
+                },
+                text: (props) => props.name,
+                style: textStyle3,
+                priorityOffset: 2,
+            }
         ],
         alwaysMaxDetail,
         true

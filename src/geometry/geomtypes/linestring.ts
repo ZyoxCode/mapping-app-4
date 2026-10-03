@@ -23,7 +23,7 @@ registerGeometry<LineStringGeometry, BuiltLineString>('LineString', {
             if (zoomLevel.areaThreshold != 0) { active.simplifier.simplify(zoomLevel.areaThreshold); }
 
             const coords = active.simplifier.snapshot();
-            const snapshot: BuiltLineString = { coords, bbox: active.bbox };
+            const snapshot: BuiltLineString = { coords, bbox: active.bbox, path: ringToPath(coords.map(coord => [coord.coord.x, coord.coord.y]), false) };
 
             if (coords.length < 2 || builtLineLength(coords) < zoomLevel.areaThreshold) { break; }
 
@@ -37,6 +37,6 @@ registerGeometry<LineStringGeometry, BuiltLineString>('LineString', {
 
         const built = prepared.builtPerZoom.get(zoomIndex);
         if (!built) { return; }
-        mergedPath.addPath(ringToPath(built.coords.map(coord => [coord.coord.x, coord.coord.y])));
+        mergedPath.addPath(built.path);
     },
 })

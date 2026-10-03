@@ -23,7 +23,8 @@ registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
             const snapshots: BuiltRing[][] = active.map(poly =>
                 poly.map(r => {
                     if (zoomLevel.areaThreshold !== 0) r.simplifier.simplify(zoomLevel.areaThreshold);
-                    return { coords: r.simplifier.snapshot(), bbox: r.bbox };
+                    const snapshot = r.simplifier.snapshot();
+                    return { coords: snapshot, bbox: r.bbox, path: ringToPath(snapshot.map(coord => [coord.coord.x, coord.coord.y])) };
                 })
             );
 
@@ -62,7 +63,7 @@ registerGeometry<MultiPolygonGeometry, BuiltMultiPolygon>('MultiPolygon', {
             if (!boundsIntersect(poly[0].bbox, visibleBounds)) continue;
             for (const ring of poly) {
                 if (!boundsIntersect(ring.bbox, visibleBounds)) continue;
-                mergedPath.addPath(ringToPath(ring.coords.map(coord => [coord.coord.x, coord.coord.y])));
+                mergedPath.addPath(ring.path);
             }
         }
     }

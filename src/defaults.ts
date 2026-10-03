@@ -2,12 +2,13 @@ import type { ZoomLevel } from "./layers/zoom-levels";
 import type { StyleOptions } from "./styles/types";
 
 export const DEFAULT_STYLE_OPTIONS: StyleOptions = {
-    fillColor: '#ffffff',
-    strokeColor: '#000000',
-    strokeWidth: 1,
+    fillColor: null,
+    strokeColor: null,
+    strokeWidth: null,
     textAlign: 'center',
-    font: '11px sans-serif',
+    font: null,
     dashed: [],
+    pointRadii: [],
 }
 
 export const DEFAULT_ZOOM_LEVELS: ZoomLevel[] = [

@@ -71,7 +71,6 @@ export class GeoMap {
         }
 
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        console.log(this.labelQueue);
-        renderLabelQueue(this.ctx, this.labelQueue, scale, translateX, translateY, this.canvas.width * 0.05);
+        renderLabelQueue(this.ctx, this.labelQueue, scale, translateX, translateY, 15);
     }
 }

@@ -4,6 +4,6 @@ import type { Point } from "../math";
 export interface Feature<BuiltType = any> {
     geometryByZoom: GeometryPerZoom<BuiltType>
     properties: Record<string, any> | null;
-    rawGeometry: any;
+    rawGeometry: any[];
     labelCoords: Point | null;
 }
