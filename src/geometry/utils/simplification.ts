@@ -1,32 +1,30 @@
-import { coordPairToPoint, triangleArea, type Point } from "../../math";
-import type { BuiltCoord, Ring } from "../geomtypes/utils";
+import { triangleArea } from "../../math/vectors";
+import { type BuiltPoint, type Point } from "../../types/geometry";
 
-export function buildRing(ring: Ring, closed = false): BuiltCoord[] {
+export function buildRing(ring: Point[], closed = false): BuiltPoint[] {
 
     if ((closed && ring.length <= 3) || (!closed && ring.length <= 2)) {
-        return ring.map((coord) => ({
-            coord: coordPairToPoint(coord), importance: Infinity
+        return ring.map((point) => ({
+            point, importance: Infinity
         }
         ));
     }
-    const newRing: BuiltCoord[] = [];
+    const newRing: BuiltPoint[] = [];
 
     for (let i = 0; i < ring.length; i++) {
-        let prev = coordPairToPoint(ring[(i - 1 + ring.length) % ring.length] as [number, number]);
-        let current = coordPairToPoint(ring[i] as [number, number]);
-        let next = coordPairToPoint(ring[(i + 1) % ring.length] as [number, number]);
+        let prev = ring[(i - 1 + ring.length) % ring.length];
+        let current = ring[i];
+        let next = ring[(i + 1) % ring.length]
         if (!closed && (i == 0 || i == ring.length - 1)) {
-            newRing.push({ coord: current, importance: Infinity });
+            newRing.push({ point: current, importance: Infinity });
         } else {
-            newRing.push({ coord: current, importance: triangleArea(prev, current, next) });
+            newRing.push({ point: current, importance: triangleArea(prev, current, next) });
         }
-        prev = current;
-        next = coordPairToPoint(ring[(i + 2) % ring.length] as [number, number]);
-
     }
 
     return newRing;
 }
+
 class MinHeap {
     private keys: number[] = [];
     private vals: number[] = [];
@@ -75,12 +73,6 @@ class MinHeap {
     }
 }
 
-/**
- * Incremental Visvalingam-Whyatt simplification of one ring.
- * Uses a doubly linked list (O(1) removal) and a min-heap with lazy
- * invalidation, and keeps its state between calls so increasing thresholds
- * continue where the previous one stopped.
- */
 export class RingSimplifier {
     private readonly points: Point[];
     private readonly importance: Float64Array;
@@ -92,7 +84,7 @@ export class RingSimplifier {
     private count: number;
     private closed: boolean;
 
-    constructor(ring: BuiltCoord[], closed: boolean = false) {
+    constructor(ring: BuiltPoint[], closed: boolean = false) {
         const n = ring.length;
         this.closed = closed
         this.count = n;
@@ -102,7 +94,7 @@ export class RingSimplifier {
         this.next = new Int32Array(n);
         this.alive = new Uint8Array(n).fill(1);
         for (let i = 0; i < n; i++) {
-            this.points[i] = ring[i].coord;
+            this.points[i] = ring[i].point;
             const isEndpoint = !closed && (i === 0 || i === n - 1);
             const imp = isEndpoint ? Infinity : ring[i].importance;
             this.importance[i] = imp;
@@ -124,11 +116,11 @@ export class RingSimplifier {
     }
 
     /** Returns the current vertices in order, as a fresh array. */
-    snapshot(): BuiltCoord[] {
-        const out: BuiltCoord[] = new Array(this.count);
+    snapshot(): Point[] {
+        const out: Point[] = new Array(this.count);
         let i = this.head;
         for (let k = 0; k < this.count; k++) {
-            out[k] = { coord: this.points[i], importance: this.importance[i] };
+            out[k] = this.points[i];
             i = this.next[i];
         }
         return out;
@@ -163,5 +155,4 @@ export class RingSimplifier {
         this.importance[i] = imp;
         this.heap.push(imp, i);
     }
-
 }

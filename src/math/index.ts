@@ -1,6 +1,4 @@
-export * from './bounds';
-export * from './projection';
-export * from './vectors';
-export * from './angles';
-
-export { type Bounds, type Point } from './types';
+export * from './vectors.ts';
+export * from './bounds.ts';
+export * from './projection.ts';
+export * from './angles.ts';

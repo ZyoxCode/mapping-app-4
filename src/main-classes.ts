@@ -1,7 +1,8 @@
 import { renderLabelQueue } from "./labels/queue";
-import type { LabelQueueEntry } from "./labels/types";
-import type { Layer } from "./layers/layer";
-import { type Bounds, type Point, scaleToWebMercatorZoom } from "./math";
+import { Layer } from "./layers/class";
+import { scaleToWebMercatorZoom } from "./math";
+import { type Point, type LabelQueueEntry, type Bounds } from "./types";
+import { stats } from "./geometry/type-handlers/multipolygon";
 
 class Viewport {
     offset: Point;
@@ -10,8 +11,8 @@ class Viewport {
     isDragging: boolean;
 
     constructor() {
-        this.offset = { x: 0, y: 0 };
-        this.last = { x: 0, y: 0 };
+        this.offset = [0, 0];
+        this.last = [0, 0];
         this.scale = 1;
         this.isDragging = false;
     }
@@ -32,8 +33,11 @@ export class GeoMap {
         this.labelQueue = [];
         this.layers = layers;
 
+        if (this.ctx) {
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
         for (const layer of layers) {
-            layer.load();
+            if (this.ctx) layer.load(this.ctx);
         }
     }
 
@@ -44,7 +48,7 @@ export class GeoMap {
         const yMax = -(0 - (translateY)) / scale;
         const yMin = -(this.canvas.height - (translateY)) / scale;
 
-        return { minCorner: { x: xMin, y: yMin }, maxCorner: { x: xMax, y: yMax } };
+        return [[xMin, yMin], [xMax, yMax]];
     }
 
     render() {
@@ -60,17 +64,18 @@ export class GeoMap {
         const R = this.canvas.height / (2 * Math.PI);
         const scale = R * this.viewport.scale;
         const webMercScale = scaleToWebMercatorZoom(2 * Math.PI * scale);
-        const translateX = this.canvas.width / 2 + this.viewport.offset.x;
-        const translateY = this.canvas.height / 2 + this.viewport.offset.y;
+        const translateX = this.canvas.width / 2 + this.viewport.offset[0];
+        const translateY = this.canvas.height / 2 + this.viewport.offset[1];
         const visibleBounds = this.getVisibleBounds(scale, translateX, translateY);
 
         this.ctx.setTransform(scale, 0, 0, -scale, translateX, translateY);
-
         for (const layer of this.layers) {
+            stats.calls = 0;
             layer.render(this.ctx, visibleBounds, scale, webMercScale, this.labelQueue);
+            // console.log(layer.name, stats);
         }
 
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        renderLabelQueue(this.ctx, this.labelQueue, scale, translateX, translateY, 15);
+        renderLabelQueue(this.ctx, this.labelQueue, scale, translateX, translateY);
     }
 }

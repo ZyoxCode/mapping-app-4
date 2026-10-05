@@ -10,4 +10,3 @@ export async function pathExists(url: string): Promise<boolean> {
         return false;
     }
 }
- 

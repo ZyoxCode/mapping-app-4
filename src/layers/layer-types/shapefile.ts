@@ -1,14 +1,10 @@
+import { DEFAULT_ZOOM_LEVELS } from "../../config/defaults";
 import { toAbsoluteUrl, pathExists } from "../../file/utils";
 import { prepareGeometry } from "../../geometry";
-import { Layer } from "../layer";
-import { type ZoomLevel } from "../zoom-levels";
-import { DEFAULT_ZOOM_LEVELS } from "../../defaults";
-import type { StyleRule } from "../../styles";
-import type { LabelRule } from "../../labels/types";
-import { lonLatToMercator } from "../../math";
-import { getMultiPolygonCentroid, getPolygonCentroid } from "../../geometry/geomtypes/utils";
-
-
+import { LabelHandler } from "../../labels/classes";
+import { type StyleRule, type ZoomLevel } from "../../types";
+import { Layer } from "../class";
+import { unifyProperties } from "../utils";
 
 export interface GeoJSONFeature {
     type: 'Feature';
@@ -39,7 +35,6 @@ export async function loadShapefile(name: string, debug: boolean): Promise<GeoJS
     return geojson;
 }
 
-
 export class ShapefileLayer extends Layer {
     filePath: string;
 
@@ -47,37 +42,30 @@ export class ShapefileLayer extends Layer {
         name: string,
         filePath: string,
         styleRules: StyleRule[],
-        labelRules: LabelRule[] = [],
+        labelHandler: LabelHandler | null = null,
         zoomLevels: ZoomLevel[] = DEFAULT_ZOOM_LEVELS,
-        debug: boolean = false
+        dependentOnLabels: boolean = false,
+        debug: boolean = false,
     ) {
-        super(name, styleRules, labelRules, zoomLevels, debug);
+        super(name, styleRules, labelHandler, zoomLevels, dependentOnLabels, debug);
         this.filePath = filePath;
     }
 
-    async load(): Promise<void> {
+    async load(ctx: CanvasRenderingContext2D): Promise<void> {
         const geojson = await loadShapefile(this.filePath, this.debug);
         if (this.debug) {
             console.log("[DEBUG]", this.name, "geojson:", geojson);
         }
         this.features = geojson.features.map((feature) => {
-            const prepared = prepareGeometry(feature.geometry, this.zoomLevels);
-            let labelCoords = null;
-            if (this.labelRules.length > 0) {
-                if (feature.properties.LABEL_X != null) {
-                    labelCoords = lonLatToMercator({ x: feature.properties.LABEL_X, y: feature.properties.LABEL_Y });
-                } else {
-                    if (feature.geometry.type === 'Polygon') {
-                        labelCoords = lonLatToMercator(getPolygonCentroid(feature.geometry.coordinates[0]));
-                    } else if (feature.geometry.type === 'MultiPolygon') {
-                        labelCoords = lonLatToMercator(getMultiPolygonCentroid(feature.geometry.coordinates.map((poly) => poly[0])));
-                    } else if (feature.geometry.type === 'Point') {
-                        labelCoords = lonLatToMercator({ x: feature.geometry.coordinates[0], y: feature.geometry.coordinates[1] });
-                    }
-                }
+            if (!feature.geometry) {
+                return { properties: feature.properties, geometry: null, builtGeometry: null };
             }
-            return { ...feature, geometryByZoom: prepared, rawGeometry: feature.geometry, labelCoords: labelCoords };
-        }).filter((feature) => feature.geometryByZoom !== null) as any;
+            unifyProperties(feature.properties, feature.geometry);
+            const prepared = prepareGeometry(feature.geometry, this.zoomLevels);
+
+            feature.properties.LABEL_ENTRIES = (this.labelHandler) ? this.labelHandler.buildLabels(feature.properties, ctx) : [];
+            return { properties: feature.properties, geometry: feature.geometry, builtGeometry: prepared };
+        })
 
         if (this.debug) {
             console.log("[DEBUG]", this.name, "features:", this.features);
@@ -86,4 +74,3 @@ export class ShapefileLayer extends Layer {
         this.ready = true;
     }
 }
-

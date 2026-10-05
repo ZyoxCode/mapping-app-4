@@ -1,4 +1,4 @@
-import type { Point } from "./types";
+import type { Point } from "../types";
 
 function clampLat(lat: number): number {
     return Math.max(-85.05112878, Math.min(85.05112878, lat));
@@ -17,17 +17,14 @@ function mercatorY(lat: number): number {
     return Math.log(Math.tan(Math.PI / 4 + latRad / 2));
 }
 
-export function lonLatToMercator({ x, y }: Point): Point {
-    return {
-        x: mercatorX(clampLon(x)),
-        y: mercatorY(clampLat(y))
-    };
+export function lonLatToMercator([x, y]: Point): Point {
+    return [mercatorX(clampLon(x)), mercatorY(clampLat(y))];
 }
 
 export function scaleToWebMercatorZoom(currentScale: number, tileSize: number = 256): number {
     if (currentScale <= 0) return 0;
-    
+
     const zoom = Math.log2(currentScale / tileSize);
-    
+
     return Math.max(0, zoom);
 }

@@ -1,4 +1,4 @@
-import type { Style } from "./classes";
+import { Style } from "../styles/class";
 
 export interface StyleOptions {
     fillColor?: string | null;
@@ -8,16 +8,6 @@ export interface StyleOptions {
     font?: string | null;
     dashed?: number[] | null;
     pointRadii?: number[];
-}
-
-export interface StyleOptionsCertain {
-    fillColor: string | null;
-    strokeColor: string | null;
-    strokeWidth: number | null;
-    textAlign: CanvasTextAlign | null;
-    font: string | null;
-    dashed: number[] | null;
-    pointRadii: number[];
 }
 
 export interface StyleRule<P = Record<string, any>> {

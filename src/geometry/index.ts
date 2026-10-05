@@ -1,7 +1,6 @@
-import './geomtypes/polygon';
-import './geomtypes/multipolygon';
-import './geomtypes/multilinestring';
-import './geomtypes/linestring';
-import './geomtypes/point';
+import './type-handlers/polygon';
+import './type-handlers/multipolygon';
+import './type-handlers/multilinestring';
+import './type-handlers/linestring';
 
 export { prepareGeometry, appendToPath } from './registry';

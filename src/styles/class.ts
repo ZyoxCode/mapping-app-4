@@ -1,17 +1,17 @@
-import { DEFAULT_STYLE_OPTIONS } from "../defaults";
-import type { StyleOptions, StyleOptionsCertain } from "./types";
+import { DEFAULT_STYLE_OPTIONS } from "../config/defaults";
+import { type StyleOptions } from "../types/styles";
 
 export class Style {
-    styleOptions: StyleOptionsCertain;
+    styleOptions: Required<StyleOptions>;
     enabled: Record<string, boolean>;
 
     constructor(styleOptions: StyleOptions) {
-        this.styleOptions = { ...DEFAULT_STYLE_OPTIONS, ...styleOptions } as StyleOptionsCertain;
-        this.enabled = { 'fill': true, 'stroke': true, 'label': true, 'labelPoint': true };
+        this.styleOptions = { ...DEFAULT_STYLE_OPTIONS, ...styleOptions };
+
+        this.enabled = { 'fill': true, 'stroke': true, 'label': true };
         if (!this.styleOptions.fillColor) this.enabled.fill = false;
         if (!this.styleOptions.strokeColor) this.enabled.stroke = false;
         if (!this.styleOptions.font) this.enabled.label = false;
-        if (this.styleOptions.pointRadii.length == 0) this.enabled.labelPoint = false;
     }
 
     apply(ctx: CanvasRenderingContext2D, scale: number): void {

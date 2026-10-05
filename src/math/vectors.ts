@@ -1,31 +1,28 @@
-import {type Point} from "./types";
+import { type Point } from "../types/geometry";
 
-export function coordPairToPoint(coordPair: number[]): Point {
-    return {x: coordPair[0], y: coordPair[1]};
-}
 
 export function vectorAdd(p1: Point, p2: Point): Point {
-    return {x: p1.x + p2.x, y: p1.y + p2.y};
+    return [p1[0] + p2[0], p1[1] + p2[1]];
 }
 
 export function vectorSubtract(p1: Point, p2: Point): Point {
-    return {x: p1.x - p2.x, y: p1.y - p2.y};
+    return [p1[0] - p2[0], p1[1] - p2[1]];
 }
 
 export function vectorScale(p: Point, scalar: number): Point {
-    return {x: p.x * scalar, y: p.y * scalar};
+    return [p[0] * scalar, p[1] * scalar];
 }
 
 export function vectorDot(p1: Point, p2: Point): number {
-    return p1.x * p2.x + p1.y * p2.y;
+    return p1[0] * p2[0] + p1[1] * p2[1];
 }
 
 export function vectorCross(p1: Point, p2: Point): number {
-    return p1.x * p2.y - p1.y * p2.x;
+    return p1[0] * p2[1] - p1[1] * p2[0];
 }
 
 export function vectorLength(p: Point): number {
-    return Math.sqrt(p.x * p.x + p.y * p.y);
+    return Math.sqrt(p[0] * p[0] + p[1] * p[1]);
 }
 
 export function triangleArea(p1: Point, p2: Point, p3: Point): number {

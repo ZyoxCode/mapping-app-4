@@ -1,7 +1,7 @@
-import type { ZoomLevel } from "./layers/zoom-levels";
-import type { StyleOptions } from "./styles/types";
+import { type StyleOptions, type ZoomLevel } from "../types";
 
-export const DEFAULT_STYLE_OPTIONS: StyleOptions = {
+
+export const DEFAULT_STYLE_OPTIONS: Required<StyleOptions> = {
     fillColor: null,
     strokeColor: null,
     strokeWidth: null,
