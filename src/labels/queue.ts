@@ -11,6 +11,7 @@ export function renderLabelQueue(
 
     const sorted = [...queue].sort((a, b) => {
         if (a.labelRank !== b.labelRank) return a.labelRank - b.labelRank;
+        if (a.scaleRank !== b.scaleRank) return a.scaleRank - b.scaleRank;
         return a.lines.length - b.lines.length;
     });
 

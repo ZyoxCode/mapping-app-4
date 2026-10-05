@@ -60,7 +60,7 @@ export class LabelHandler {
             coords: lonLatToMercator(properties.LABEL_POINT),
             style,
             marker: this.marker,
-            scaleRank: properties.SCALERANK,
+            scaleRank: properties.MIN_LABEL,
             labelRank: properties.LABELRANK + this.priorityOffset,
         };
     }

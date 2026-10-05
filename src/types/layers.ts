@@ -9,3 +9,5 @@ export interface Feature {
     geometry: any;
     builtGeometry: any;
 }
+
+export interface PackedFeature { type: string; packed: any | null }

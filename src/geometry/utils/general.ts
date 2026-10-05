@@ -94,3 +94,13 @@ export function mergeLineStrings(lines: Point[][]): Point[][] {
 
     return merged;
 }
+
+export function flatten(points: Point[]): Float64Array {
+    const out = new Float64Array(points.length * 2);
+    for (let i = 0; i < points.length; i++) {
+        const [x, y] = lonLatToMercator(points[i]);
+        out[2 * i] = x;
+        out[2 * i + 1] = y;
+    }
+    return out;
+}

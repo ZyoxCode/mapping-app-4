@@ -33,7 +33,9 @@ export interface BuiltMultiLineString {
     children: BuiltLineString[];
 }
 
-export interface GeometryHandler<GeometryType, BuiltType = any> {
-    prepare(geometry: GeometryType, zoomLevels: ZoomLevel[]): BuiltType | null;
+export interface GeometryHandler<GeometryType, PackedType = any, BuiltType = any> {
+    prepare?(geometry: GeometryType, zoomLevels: ZoomLevel[]): BuiltType | null;
+    pack?(geometry: GeometryType, zoomLevels: ZoomLevel[]): PackedType | null;
+    unpack?(packed: PackedType): BuiltType;
     appendToPath(path: Path2D, prepared: BuiltType, visibleBounds: Bounds, zoomIndex: number): void;
 }

@@ -1,22 +1,29 @@
 import { boundsIntersect, unionBounds } from "../../math";
-import { registerGeometry } from "../registry.ts";
-import type { BuiltMultiLineString, BuiltLineString, Point } from "../../types";
-import { mergeLineStrings } from "../utils/general.ts";
-import { buildLineString } from "./linestring.ts";
+import { registerGeometry } from "../registry";
+import { type BuiltMultiLineString, type Point, type Bounds, type ZoomLevel } from "../../types";
+import { packLineString, unpackLineString, type PackedLineString } from "./linestring";
 
-import { stats } from "./multipolygon.ts";
 export interface MultiLineStringGeometry {
-    type: 'LineString';
+    type: 'MultiLineString';
     coordinates: Point[][];
 }
 
-registerGeometry<MultiLineStringGeometry, BuiltMultiLineString>('MultiLineString', {
-    prepare(geometry, zoomLevels) {
-        const merged = mergeLineStrings(geometry.coordinates);
-        const children: BuiltLineString[] = merged.map(line => buildLineString(line, zoomLevels));
-        const bbox = unionBounds(children.map(p => p.bbox));
+export interface PackedMultiLineString {
+    bbox: Bounds;
+    children: PackedLineString[];
+}
 
-        return { children, bbox };
+registerGeometry<MultiLineStringGeometry, PackedMultiLineString, BuiltMultiLineString>('MultiLineString', {
+    pack(geometry, zoomLevels: ZoomLevel[]) {
+        const children = geometry.coordinates.map(line => packLineString(line, zoomLevels));
+        const bbox = unionBounds(children.map(p => p.bbox));
+        return { bbox, children };
+    },
+    unpack(packed) {
+        return {
+            bbox: packed.bbox,
+            children: packed.children.map(unpackLineString),
+        };
     },
     appendToPath(mergedPath, prepared, visibleBounds, zoomIndex) {
         if (!boundsIntersect(prepared.bbox, visibleBounds)) { return; }
@@ -26,8 +33,7 @@ registerGeometry<MultiLineStringGeometry, BuiltMultiLineString>('MultiLineString
 
             const path = line.pathPerZoom.get(zoomIndex);
             if (!path) continue;
-            stats.calls++;
             mergedPath.addPath(path);
         }
     },
-})
+});
